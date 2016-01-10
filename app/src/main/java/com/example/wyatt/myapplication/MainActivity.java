@@ -1,6 +1,8 @@
 package com.example.wyatt.myapplication;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -14,9 +16,13 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Calendar;
 import java.util.List;
 
 
@@ -36,12 +42,12 @@ public class MainActivity extends AppCompatActivity {
             switch (msg.what) {
                 case Config.STARTSCAN:
                     wifiResultsCounter++;
-                    infoTextView = infoTextView == null ? (TextView)findViewById(R.id.tv_counter) : infoTextView;
+                    infoTextView = infoTextView == null ? (TextView) findViewById(R.id.tv_counter) : infoTextView;
                     infoTextView.setText("Wifi Counter:" + String.valueOf(wifiResultsCounter));
                     Log.e("Handler", String.valueOf(wifiResultsCounter));
-                    if(wifiResultsCounter == Config.WIFINUMBER) {
+                    if (wifiResultsCounter == Config.WIFINUMBER) {
                         stopThread();
-                        Snackbar.make(findViewById(R.id.fab).getRootView(), "Scan finished. Number of wifi:" + String.valueOf(wifiResultsCounter), Snackbar.LENGTH_LONG)
+                        Snackbar.make(findViewById(R.id.fab_ss).getRootView(), "Scan finished. Number of wifi:" + String.valueOf(wifiResultsCounter), Snackbar.LENGTH_LONG)
                                 .setAction("Action", null).show();
                     }
                     flushWifiList();
@@ -55,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
     };
 
     public void init() {
-        wifiManager = (WifiManager)this.getSystemService(Context.WIFI_SERVICE);
+        wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
         wifiScanner = new NetworkScanner(wifiManager);
         isScanning = false;
     }
@@ -63,13 +69,13 @@ public class MainActivity extends AppCompatActivity {
     public void stopThread() {
         Log.e("stop", "thread");
         isScanning = false;
-        if(wifiThread != null) {
+        if (wifiThread != null) {
             wifiThread.interrupt();
         }
     }
 
     public void flushWifiList() {
-        wifiListView = wifiListView == null ? (ListView)findViewById(R.id.lv_wifi) : wifiListView;
+        wifiListView = wifiListView == null ? (ListView) findViewById(R.id.lv_wifi) : wifiListView;
         List<ScanResult> res = wifiScanner.scanNetworks();
         ScanResultsAdapter adapter = new ScanResultsAdapter(MainActivity.this, res);
         wifiListView.setAdapter(adapter);
@@ -84,7 +90,42 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton scanButton = (FloatingActionButton) findViewById(R.id.fab);
+        FloatingActionButton saveButton = (FloatingActionButton) findViewById(R.id.fab_save);
+        saveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final EditText et = new EditText(MainActivity.this);
+                new AlertDialog.Builder(MainActivity.this).setTitle("Save Records")
+                        .setView(et)
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                String apName = et.getText().toString();
+
+                                try {
+                                    Calendar calendar = Calendar.getInstance();
+                                    String year = String.valueOf(calendar.get(Calendar.YEAR));
+                                    String month = String.valueOf(calendar.get(Calendar.MONTH));
+                                    String day = String.valueOf(calendar.get(Calendar.DATE));
+                                    String foutName = String.format("%s%s%s_%s", year, month, day, apName);
+
+                                    FileOutputStream fout = openFileOutput(foutName, MODE_APPEND);
+                                    fout.write("dd".getBytes());
+                                    fout.flush();
+                                    fout.close();
+
+                                    Snackbar.make(findViewById(R.id.fab_ss).getRootView(), "The data has been saved in " + foutName, Snackbar.LENGTH_LONG)
+                                            .setAction("Action", null).show();
+                                } catch (IOException e) {
+                                    Log.e("IOException", "IOException");
+                                }
+                            }
+                        })
+                        .setNegativeButton("Cancle", null).show();
+            }
+        });
+
+        FloatingActionButton scanButton = (FloatingActionButton) findViewById(R.id.fab_ss);
         scanButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -95,19 +136,19 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     Snackbar.make(view, "Start scan", Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
+                    wifiResultsCounter = 0;
                     isScanning = true;
                     wifiThread = new Thread() {
                         public void run() {
-                            while(isScanning) {
+                            while (isScanning) {
                                 Message msg = new Message();
                                 msg.what = Config.STARTSCAN;
                                 mHandler.sendMessage(msg);
                                 try {
                                     Thread.sleep(1000);
-                                } catch(InterruptedException e) {
+                                } catch (InterruptedException e) {
                                     Thread.currentThread().interrupt();
-                                    wifiResultsCounter = 0;
-                                } catch(Exception e) {
+                                } catch (Exception e) {
 
                                 }
                             }
