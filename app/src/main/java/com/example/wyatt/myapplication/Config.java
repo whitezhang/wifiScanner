@@ -7,4 +7,6 @@ public class Config {
     public static final int WIFINUMBER = 10;
     public static final int STARTSCAN = 1;
     public static final int STOPSCAN = 2;
+
+    public static final int INVALIDATE = 3;
 }

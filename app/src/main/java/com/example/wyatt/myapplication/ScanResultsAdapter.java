@@ -50,6 +50,8 @@ public class ScanResultsAdapter extends BaseAdapter {
         txtBSSID.setText("msc:" + result.BSSID);
         txtLevel.setText("sigLevel:" + Integer.toString(result.level));
 
+        TrendView trendView = (TrendView)convertView.findViewById(R.id.trends);
+
         return convertView;
     }
 }
