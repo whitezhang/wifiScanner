@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
@@ -20,8 +21,10 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -115,21 +118,28 @@ public class MainActivity extends AppCompatActivity {
                                     String day = String.valueOf(calendar.get(Calendar.DATE));
                                     String foutName = String.format("%s%s%s_%s", year, month, day, apName);
 
-                                    FileOutputStream fout = openFileOutput(foutName, MODE_APPEND);
+                                    String filepath = Environment.getExternalStorageDirectory() + "/wifiscanner";
+                                    File destDir = new File(filepath);
+                                    if(!destDir.exists()) {
+                                        destDir.mkdirs();
+                                    }
+
+                                    File file = new File(filepath, foutName);
+                                    OutputStream fout = new FileOutputStream(file);
 
                                     for(List<ScanResult> results: wifiList) {
                                         for(ScanResult r: results) {
                                             String info = String.format("%s;%s;%s|", r.BSSID, r.SSID, r.level);
                                             fout.write(info.getBytes());
                                         }
-                                        fout.write("".getBytes());
+                                        fout.write("\n".getBytes());
                                     }
-                                    fout.flush();
                                     fout.close();
 
                                     Snackbar.make(findViewById(R.id.fab_ss).getRootView(), "The data has been saved in " + foutName, Snackbar.LENGTH_LONG)
                                             .setAction("Action", null).show();
                                 } catch (IOException e) {
+                                    e.printStackTrace();
                                     Log.e("IOException", "IOException");
                                 }
                             }
