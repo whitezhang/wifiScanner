@@ -14,11 +14,15 @@ import java.util.List;
  * Created by wyatt on 1/10/16.
  */
 public class ScanResultsAdapter extends BaseAdapter {
-    private final Context context;
-    private final List<ScanResult> results;
+    private Context context;
+    private List<ScanResult> results;
 
     public ScanResultsAdapter(Context context, List<ScanResult> results) {
         this.context = context;
+        this.results = results;
+    }
+
+    public void setScanResult(List<ScanResult> results) {
         this.results = results;
     }
 
@@ -43,14 +47,12 @@ public class ScanResultsAdapter extends BaseAdapter {
         }
 
         TextView txtSSID = (TextView)convertView.findViewById(R.id.txtSSID);
-        TextView txtBSSID = (TextView)convertView.findViewById(R.id.txtBSSID);
+        TextView txtMSG = (TextView)convertView.findViewById(R.id.txtMsg);
         TextView txtLevel = (TextView)convertView.findViewById(R.id.txtLevel);
 
         txtSSID.setText("ssid:" + result.SSID);
-        txtBSSID.setText("msc:" + result.BSSID);
+        txtMSG.setText("Msg:" + result.BSSID);
         txtLevel.setText("sigLevel:" + Integer.toString(result.level));
-
-        TrendView trendView = (TrendView)convertView.findViewById(R.id.trends);
 
         return convertView;
     }

@@ -22,6 +22,7 @@ import android.widget.TextView;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
@@ -33,27 +34,39 @@ public class MainActivity extends AppCompatActivity {
     private ListView wifiListView;
     private TextView infoTextView;
 
+    private ScanResultsAdapter scanResultsAdapter;
+    private List<ScanResult> scanResult;
+
     private Thread wifiThread;
     private volatile boolean isScanning;
     private int wifiResultsCounter = 0;
+
+    private ArrayList<List<ScanResult>> wifiList;
 
     public Handler mHandler = new Handler() {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case Config.STARTSCAN:
+                    wifiList.add(scanResult);
+
                     wifiResultsCounter++;
                     infoTextView = infoTextView == null ? (TextView) findViewById(R.id.tv_counter) : infoTextView;
-                    infoTextView.setText("Wifi Counter:" + String.valueOf(wifiResultsCounter));
-                    Log.e("Handler", String.valueOf(wifiResultsCounter));
+                    infoTextView.setText("Wifi Counter:" + String.valueOf(wifiResultsCounter) + " (Scanning)");
                     if (wifiResultsCounter == Config.WIFINUMBER) {
                         stopThread();
-                        Snackbar.make(findViewById(R.id.fab_ss).getRootView(), "Scan finished. Number of wifi:" + String.valueOf(wifiResultsCounter), Snackbar.LENGTH_LONG)
-                                .setAction("Action", null).show();
+                        infoTextView.setText("Wifi Counter:" + String.valueOf(wifiResultsCounter) + " (Finished)");
+//                        Snackbar.make(findViewById(R.id.fab_ss).getRootView(), "Scan finished. Number of wifi:" + String.valueOf(wifiResultsCounter), Snackbar.LENGTH_LONG)
+//                                .setAction("Action", null).show();
                     }
-                    flushWifiList();
+                    scanResult = wifiScanner.scanNetworks();
+                    scanResultsAdapter = new ScanResultsAdapter(MainActivity.this, scanResult);
+                    wifiListView.setAdapter(scanResultsAdapter);
                     break;
+                case Config.STOPSCAN:
+                    stopThread();
+                    infoTextView = infoTextView == null ? (TextView) findViewById(R.id.tv_counter) : infoTextView;
+                    infoTextView.setText("Wifi Counter:" + String.valueOf(wifiResultsCounter) + " (Stopped)");
                 default:
-                    Log.e("default", "default");
                     break;
             }
             super.handleMessage(msg);
@@ -63,22 +76,15 @@ public class MainActivity extends AppCompatActivity {
     public void init() {
         wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
         wifiScanner = new NetworkScanner(wifiManager);
-        isScanning = false;
+
+        wifiList = new ArrayList<>();
     }
 
     public void stopThread() {
-        Log.e("stop", "thread");
         isScanning = false;
         if (wifiThread != null) {
             wifiThread.interrupt();
         }
-    }
-
-    public void flushWifiList() {
-        wifiListView = wifiListView == null ? (ListView) findViewById(R.id.lv_wifi) : wifiListView;
-        List<ScanResult> res = wifiScanner.scanNetworks();
-        ScanResultsAdapter adapter = new ScanResultsAdapter(MainActivity.this, res);
-        wifiListView.setAdapter(adapter);
     }
 
     @Override
@@ -110,7 +116,14 @@ public class MainActivity extends AppCompatActivity {
                                     String foutName = String.format("%s%s%s_%s", year, month, day, apName);
 
                                     FileOutputStream fout = openFileOutput(foutName, MODE_APPEND);
-                                    fout.write("dd".getBytes());
+
+                                    for(List<ScanResult> results: wifiList) {
+                                        for(ScanResult r: results) {
+                                            String info = String.format("%s;%s;%s|", r.BSSID, r.SSID, r.level);
+                                            fout.write(info.getBytes());
+                                        }
+                                        fout.write("".getBytes());
+                                    }
                                     fout.flush();
                                     fout.close();
 
@@ -125,17 +138,30 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        FloatingActionButton seeButton = (FloatingActionButton) findViewById(R.id.fab_see);
+        seeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                infoTextView = infoTextView == null ? (TextView) findViewById(R.id.tv_counter) : infoTextView;
+                scanResult = wifiScanner.scanNetworks();
+                scanResultsAdapter = new ScanResultsAdapter(MainActivity.this, scanResult);
+                wifiListView.setAdapter(scanResultsAdapter);
+            }
+        });
+
         FloatingActionButton scanButton = (FloatingActionButton) findViewById(R.id.fab_ss);
         scanButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (isScanning) {
-                    Snackbar.make(view, "Stop scan", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                    stopThread();
+//                    Snackbar.make(view, "Stop scan", Snackbar.LENGTH_LONG)
+//                            .setAction("Action", null).show();
+                    Message msg = new Message();
+                    msg.what = Config.STOPSCAN;
+                    mHandler.sendMessage(msg);
                 } else {
-                    Snackbar.make(view, "Start scan", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
+//                    Snackbar.make(view, "Start scan", Snackbar.LENGTH_LONG)
+//                            .setAction("Action", null).show();
                     wifiResultsCounter = 0;
                     isScanning = true;
                     wifiThread = new Thread() {
@@ -160,12 +186,12 @@ public class MainActivity extends AppCompatActivity {
         });
 
         infoTextView = (TextView) findViewById(R.id.tv_counter);
-        infoTextView.setText("Wifi Counter: 0");
+        infoTextView.setText("Wifi Counter: 0 (Stopped)");
 
         wifiListView = (ListView) findViewById(R.id.lv_wifi);
-        List<ScanResult> res = wifiScanner.scanNetworks();
-        ScanResultsAdapter adapter = new ScanResultsAdapter(MainActivity.this, res);
-        wifiListView.setAdapter(adapter);
+        scanResult = wifiScanner.scanNetworks();
+        scanResultsAdapter = new ScanResultsAdapter(MainActivity.this, scanResult);
+        wifiListView.setAdapter(scanResultsAdapter);
     }
 
     @Override
@@ -181,9 +207,27 @@ public class MainActivity extends AppCompatActivity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
+        final EditText myinput = new EditText(this);
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            new AlertDialog.Builder(this).setTitle("Wifi Number: "+Config.WIFINUMBER).setIcon(
+                    android.R.drawable.ic_dialog_info).setView(myinput)
+                    .setPositiveButton("Save",
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    try {
+                                        Config.WIFINUMBER = Integer.parseInt(myinput.getText().toString());
+                                    } catch (Exception e) {
+                                        Snackbar.make(findViewById(R.id.fab_ss).getRootView(), "Failed to save", Snackbar.LENGTH_LONG)
+                                            .setAction("Action", null).show();
+                                        return;
+                                    }
+                                    Snackbar.make(findViewById(R.id.fab_ss).getRootView(), "Save successfully", Snackbar.LENGTH_LONG)
+                                            .setAction("Action", null).show();
+                                }
+                            })
+                    .setNegativeButton("Cancle", null).show();
             return true;
         }
 

@@ -17,14 +17,19 @@
 
     <include layout="@layout/content_main" />
 
-    <android.support.design.widget.FloatingActionButton android:id="@+id/fab_ss"
-        android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end" android:layout_margin="@dimen/fab_margin"
-        android:src="@android:drawable/ic_dialog_email" />
-
     <android.support.design.widget.FloatingActionButton android:id="@+id/fab_save"
         android:layout_width="wrap_content" android:layout_height="wrap_content"
         android:layout_gravity="bottom|start" android:layout_margin="@dimen/fab_margin"
-        android:src="@android:drawable/ic_dialog_email" />
+        android:src="@drawable/save_logo" />
+
+    <android.support.design.widget.FloatingActionButton android:id="@+id/fab_see"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center" android:layout_margin="@dimen/fab_margin"
+        android:src="@drawable/see_logo" />
+
+    <android.support.design.widget.FloatingActionButton android:id="@+id/fab_ss"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end" android:layout_margin="@dimen/fab_margin"
+        android:src="@drawable/scan_logo" />
 
 </android.support.design.widget.CoordinatorLayout>
