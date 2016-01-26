@@ -69,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
                     stopThread();
                     infoTextView = infoTextView == null ? (TextView) findViewById(R.id.tv_counter) : infoTextView;
                     infoTextView.setText("Wifi Counter:" + String.valueOf(wifiResultsCounter) + " (Stopped)");
+                    wifiList = new ArrayList<>();
                 default:
                     break;
             }
@@ -138,6 +139,8 @@ public class MainActivity extends AppCompatActivity {
 
                                     Snackbar.make(findViewById(R.id.fab_ss).getRootView(), "The data has been saved in " + foutName, Snackbar.LENGTH_LONG)
                                             .setAction("Action", null).show();
+
+                                    wifiList = new ArrayList<>();
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                     Log.e("IOException", "IOException");
