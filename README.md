@@ -8,4 +8,6 @@ The application is used to scan wifi around. The functionalities contain:
 	- Check the wifi around
 	- Record wifi around
 
-![Homepage](./doc/homepage.png)
+### Preview
+
+<img src="./doc/homepage.png" alt="Homepage" width="300px"/>
